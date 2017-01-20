@@ -31,17 +31,13 @@ describe 'nexus::package', :type => :class do
       context 'with default values' do
         it { should contain_class('nexus::package') }
 
-        it { should contain_wget__fetch('nexus-2.11.2-01-bundle.tar.gz').with(
-          'source'      => 'http://download.sonatype.com/nexus/oss/nexus-2.11.2-01-bundle.tar.gz',
-          'destination' => '/srv/nexus-2.11.2-01-bundle.tar.gz',
-          'before'      => 'Exec[nexus-untar]',
-          'source_hash' => '',
-        ) }
-
-        it { should contain_exec('nexus-untar').with(
-          'command' => 'tar zxf /srv/nexus-2.11.2-01-bundle.tar.gz --directory /srv',
-          'creates' => '/srv/nexus-2.11.2-01',
-          'path'    => [ '/bin', '/usr/bin' ],
+        it { should contain_archive('nexus-2.11.2-01-bundle.tar.gz').with(
+          'source'          => 'http://download.sonatype.com/nexus/oss/nexus-2.11.2-01-bundle.tar.gz',
+          'path'            => '/srv/nexus-2.11.2-01-bundle.tar.gz',
+          'checksum'        => '',
+          'checksum_verify' => false,
+          'extract_path'    => '/srv',
+          'creates'         => '/srv/nexus-2.11.2-01',
         ) }
 
         it { should contain_file('/srv/nexus-2.11.2-01').with(
@@ -49,7 +45,7 @@ describe 'nexus::package', :type => :class do
           'owner'   => 'nexus',
           'group'   => 'nexus',
           'recurse' => true,
-          'require' => 'Exec[nexus-untar]',
+          'require' => 'Archive[nexus-2.11.2-01-bundle.tar.gz]',
         ) }
 
         it { should contain_file('/srv/sonatype-work/nexus').with(
@@ -57,13 +53,13 @@ describe 'nexus::package', :type => :class do
           'owner'   => 'nexus',
           'group'   => 'nexus',
           'recurse' => true,
-          'require' => 'Exec[nexus-untar]',
+          'require' => 'Archive[nexus-2.11.2-01-bundle.tar.gz]',
         ) }
 
         it { should contain_file('/srv/nexus').with(
           'ensure'  => 'link',
           'target'  => '/srv/nexus-2.11.2-01',
-          'require' => 'Exec[nexus-untar]',
+          'require' => 'Archive[nexus-2.11.2-01-bundle.tar.gz]',
         ) }
 
         it 'should handle deploy_pro' do
@@ -74,14 +70,9 @@ describe 'nexus::package', :type => :class do
             }
           )
 
-          should contain_wget__fetch('nexus-professional-2.11.2-01-bundle.tar.gz').with(
+          should contain_archive('nexus-professional-2.11.2-01-bundle.tar.gz').with(
             'source' => 'http://download.sonatype.com/nexus/professional-bundle/nexus-professional-2.11.2-01-bundle.tar.gz',
-            'destination' => '/srv/nexus-professional-2.11.2-01-bundle.tar.gz',
-          )
-
-          should contain_exec('nexus-untar').with(
-            'command' => 'tar zxf /srv/nexus-professional-2.11.2-01-bundle.tar.gz --directory /srv',
-            'creates' => '/srv/nexus-professional-2.11.2-01',
+            'path'   => '/srv/nexus-professional-2.11.2-01-bundle.tar.gz',
           )
 
           should contain_file('/srv/nexus-professional-2.11.2-01')
@@ -92,21 +83,23 @@ describe 'nexus::package', :type => :class do
         end
 
         it 'should working with md5sum' do
-          params.merge!(
-            {
-              'md5sum'        => '1234567890'
-            }
+          params.merge!({'md5sum'=> '1234567890'})
+
+          should contain_archive('nexus-2.11.2-01-bundle.tar.gz').with(
+            'source'          => 'http://download.sonatype.com/nexus/oss/nexus-2.11.2-01-bundle.tar.gz',
+            'path'            => '/srv/nexus-2.11.2-01-bundle.tar.gz',
+            'checksum'        => '1234567890',
+            'checksum_verify' => true,
           )
-          should contain_wget__fetch('nexus-2.11.2-01-bundle.tar.gz').with(
-            'source'      => 'http://download.sonatype.com/nexus/oss/nexus-2.11.2-01-bundle.tar.gz',
-            'destination' => '/srv/nexus-2.11.2-01-bundle.tar.gz',
-            'before'      => 'Exec[nexus-untar]',
-            'source_hash' => '1234567890',
-          )
-          should contain_exec('nexus-untar').with(
-            'command' => 'tar zxf /srv/nexus-2.11.2-01-bundle.tar.gz --directory /srv',
-            'creates' => '/srv/nexus-2.11.2-01',
-            'path'    => [ '/bin', '/usr/bin' ],
+        end
+
+        it 'should work with a https|http|ftp proxy server' do
+          params.merge!({'proxy_server' => 'https://example.com:8080'})
+
+          should contain_archive('nexus-2.11.2-01-bundle.tar.gz').with(
+            'source'          => 'http://download.sonatype.com/nexus/oss/nexus-2.11.2-01-bundle.tar.gz',
+            'path'            => '/srv/nexus-2.11.2-01-bundle.tar.gz',
+            'proxy_server'    => 'https://example.com:8080',
           )
         end
 

@@ -50,6 +50,7 @@ class nexus (
   $download_folder       = $nexus::params::download_folder,
   $manage_config         = $nexus::params::manage_config,
   $md5sum                = $nexus::params::md5sum,
+  $proxy_server          = undef
 ) inherits nexus::params {
   include stdlib
 
@@ -63,6 +64,8 @@ class nexus (
   } else {
     $real_nexus_work_dir = "${nexus_root}/sonatype-work/nexus"
   }
+
+  if $proxy_server != undef { validate_string($proxy_server) }
 
   # Determine if Nexus Pro should be deployed instead of OSS
   validate_bool($deploy_pro)
